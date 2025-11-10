@@ -52,7 +52,7 @@ struct Packet {
 
 fn build_packet(id: i32, kind: i32, payload: &str) -> Packet {
     // size = id(4) + kind(4) + payload bytes + 2 null bytes
-    let payload_len = payload.as_bytes().len() as i32;
+    let payload_len = payload.len() as i32;
     let size = 4 + 4 + payload_len + 2;
     Packet {
         size,
@@ -81,7 +81,7 @@ async fn recv_packet(stream: &mut TcpStream) -> Result<Packet, Box<dyn std::erro
     let mut size_le = [0u8; 4];
     stream.read_exact(&mut size_le).await?;
     let size = i32::from_le_bytes(size_le);
-    if size < MIN_PACKET_SIZE || size > 4096 {
+    if !(MIN_PACKET_SIZE..=4096).contains(&size) {
         return Err("Invalid packet size".into());
     }
 

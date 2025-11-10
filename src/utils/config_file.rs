@@ -64,21 +64,21 @@ pub struct Console {
 impl McConfig {
     /// Parse mc.toml file from the given path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let content = fs::read_to_string(path).map_err(|e| ConfigError::IoError(e))?;
+        let content = fs::read_to_string(path).map_err(ConfigError::Io)?;
 
         Self::from_str(&content)
     }
 
     /// Parse mc.toml from a string
     pub fn from_str(content: &str) -> Result<Self, ConfigError> {
-        toml::from_str(content).map_err(|e| ConfigError::ParseError(e))
+        toml::from_str(content).map_err(ConfigError::Parse)
     }
 
     /// Save configuration to a file
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), ConfigError> {
-        let content = toml::to_string_pretty(self).map_err(|e| ConfigError::SerializeError(e))?;
+        let content = toml::to_string_pretty(self).map_err(ConfigError::Serialize)?;
 
-        fs::write(path, content).map_err(|e| ConfigError::IoError(e))
+        fs::write(path, content).map_err(ConfigError::Io)
     }
 
     /// Load mc.toml from the current directory
@@ -87,6 +87,7 @@ impl McConfig {
     }
 
     /// Check if mc.toml exists in the current directory
+    #[allow(dead_code)]
     pub fn exists() -> bool {
         Path::new("mc.toml").exists()
     }
@@ -126,17 +127,17 @@ impl McConfig {
 /// Error types for configuration file operations
 #[derive(Debug)]
 pub enum ConfigError {
-    IoError(io::Error),
-    ParseError(toml::de::Error),
-    SerializeError(toml::ser::Error),
+    Io(io::Error),
+    Parse(toml::de::Error),
+    Serialize(toml::ser::Error),
 }
 
 impl std::fmt::Display for ConfigError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ConfigError::IoError(e) => write!(f, "IO error: {}", e),
-            ConfigError::ParseError(e) => write!(f, "Parse error: {}", e),
-            ConfigError::SerializeError(e) => write!(f, "Serialize error: {}", e),
+            ConfigError::Io(e) => write!(f, "IO error: {}", e),
+            ConfigError::Parse(e) => write!(f, "Parse error: {}", e),
+            ConfigError::Serialize(e) => write!(f, "Serialize error: {}", e),
         }
     }
 }

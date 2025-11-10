@@ -48,6 +48,7 @@ impl FabricClient {
     }
 
     /// Override the base URL (useful for testing)
+    #[allow(dead_code)]
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
@@ -167,6 +168,7 @@ impl FabricClient {
     }
 
     /// Get the latest stable installer version
+    #[allow(dead_code)]
     pub async fn get_latest_installer(
         &self,
     ) -> Result<Option<InstallerVersion>, Box<dyn std::error::Error>> {
@@ -175,6 +177,7 @@ impl FabricClient {
     }
 
     /// Get the latest stable loader version
+    #[allow(dead_code)]
     pub async fn get_latest_loader(
         &self,
     ) -> Result<Option<LoaderVersion>, Box<dyn std::error::Error>> {
@@ -183,6 +186,7 @@ impl FabricClient {
     }
 
     /// Get the latest stable game version
+    #[allow(dead_code)]
     pub async fn get_latest_game(&self) -> Result<Option<GameVersion>, Box<dyn std::error::Error>> {
         let versions = self.get_game_versions().await?;
         Ok(versions.into_iter().find(|v| v.stable))

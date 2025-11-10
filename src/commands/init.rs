@@ -13,7 +13,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
-use std::io::{self, Write};
+use std::io::{self};
 use std::path::PathBuf;
 
 /// Build the init subcommand definition
@@ -98,6 +98,7 @@ pub struct FabricVersion {
     pub installer: String,
 }
 /// Fetch Fabric version information
+#[allow(dead_code)]
 async fn fetch_fabric_versions() -> Result<FabricVersion, Box<dyn std::error::Error>> {
     let client = FabricClient::new()?;
 
@@ -162,7 +163,7 @@ async fn download_fabric_server_jar(
         "https://meta.fabricmc.net/v2/versions/loader/{}/{}/{}/server/jar",
         fabric_versions.game, fabric_versions.loader, fabric_versions.installer
     );
-    let output_file = format!("server.jar");
+    let output_file = "server.jar".to_string();
     println!("Downloading Fabric server JAR from: {}", fabric_server_url);
     let response = reqwest::get(&fabric_server_url).await?;
     let bytes = response.bytes().await?;
@@ -194,9 +195,10 @@ async fn initial_start_server() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Render a selectable table and prompt user for a choice, returning selected index
+#[allow(unused_assignments)]
 fn select_with_ratatui(
     title: &str,
-    items: &Vec<String>,
+    items: &[String],
 ) -> Result<usize, Box<dyn std::error::Error>> {
     // Setup terminal
     let mut stdout = io::stdout();
@@ -210,7 +212,7 @@ fn select_with_ratatui(
     let mut filtered_indices: Vec<usize> = (0..items.len()).collect();
     let mut selected: usize = 0; // index in filtered list
     let mut scroll: usize = 0; // top row in filtered list
-    let mut result: Option<usize> = None; // final selected original index
+    let mut result: usize = 0; // final selected original index
 
     loop {
         terminal.draw(|f| {
@@ -270,13 +272,11 @@ fn select_with_ratatui(
             f.render_widget(items_widget, chunks[1]);
         })?;
 
-        if event::poll(std::time::Duration::from_millis(200))? {
-            if let Event::Key(key) = event::read()? {
+        if event::poll(std::time::Duration::from_millis(200))?
+            && let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Up => {
-                        if selected > 0 {
-                            selected -= 1;
-                        }
+                        selected = selected.saturating_sub(1);
                     }
                     KeyCode::Down => {
                         if selected + 1 < filtered_indices.len() {
@@ -304,16 +304,16 @@ fn select_with_ratatui(
                     }
                     KeyCode::Enter => {
                         if filtered_indices.is_empty() {
-                            result = Some(0);
+                            result = 0;
                         } else {
-                            result = Some(filtered_indices[selected]);
+                            result = filtered_indices[selected];
                         }
                         break;
                     }
                     KeyCode::Esc => {
                         if query.is_empty() {
                             // Cancel selection: default to first
-                            result = Some(0);
+                            result = 0;
                             break;
                         } else {
                             // Clear search
@@ -324,7 +324,7 @@ fn select_with_ratatui(
                         }
                     }
                     KeyCode::Char('q') => {
-                        result = Some(0);
+                        result = 0;
                         break;
                     }
                     KeyCode::Backspace => {
@@ -358,7 +358,6 @@ fn select_with_ratatui(
                     _ => {}
                 }
             }
-        }
     }
 
     // Restore terminal
@@ -366,7 +365,7 @@ fn select_with_ratatui(
     let mut out = io::stdout();
     execute!(out, terminal::LeaveAlternateScreen)?;
 
-    Ok(result.unwrap_or(0))
+    Ok(result)
 }
 
 /// Initial setup of the server

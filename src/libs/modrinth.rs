@@ -63,6 +63,7 @@ pub struct SearchQuery {
     pub filters: Option<String>,
 }
 
+#[allow(dead_code)]
 impl SearchQuery {
     pub fn new() -> Self {
         Self::default()
@@ -113,6 +114,7 @@ pub struct ModrinthClient {
 }
 
 impl ModrinthClient {
+    #[allow(dead_code)]
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
 
@@ -122,6 +124,7 @@ impl ModrinthClient {
         })
     }
 
+    #[allow(dead_code)]
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
@@ -159,6 +162,7 @@ impl ModrinthClient {
     ///     Ok(())
     /// }
     /// ```
+    #[allow(dead_code)]
     pub async fn search_projects(
         &self,
         query: Option<SearchQuery>,
@@ -183,6 +187,7 @@ impl ModrinthClient {
     }
 
     /// Get a project by ID or slug
+    #[allow(dead_code)]
     pub async fn get_project(
         &self,
         id_or_slug: &str,
@@ -199,6 +204,7 @@ impl ModrinthClient {
     }
 
     /// List versions for a project by ID or slug
+    #[allow(dead_code)]
     pub async fn get_project_versions(
         &self,
         id_or_slug: &str,
@@ -215,6 +221,7 @@ impl ModrinthClient {
     }
 
     /// Get a version by ID
+    #[allow(dead_code)]
     pub async fn get_version(&self, id: &str) -> Result<Version, Box<dyn std::error::Error>> {
         let url = format!("{}/version/{}", self.base_url, id);
         let response = self.client.get(&url).send().await?;

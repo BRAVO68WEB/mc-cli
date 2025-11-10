@@ -35,7 +35,7 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
     let path = matches
         .get_one::<String>("file")
-        .map(|p| PathBuf::from(p))
+        .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("server.properties"));
     let mut props = ServerProperties::from_file(&path)?;
 

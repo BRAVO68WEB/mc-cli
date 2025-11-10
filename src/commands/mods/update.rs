@@ -51,7 +51,7 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
         match versions {
             Ok(vs) => {
                 // Determine latest (first entry)
-                if let Some(v) = vs.get(0) {
+                if let Some(v) = vs.first() {
                     latest_version = v.version_number.clone().unwrap_or_else(|| v.id.clone());
                     if let Some(file) = v
                         .files
@@ -85,7 +85,7 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
             }
         }
 
-        let needs_update = !latest_version.eq(&installed_version) && latest_version != "-";
+        let _needs_update = !latest_version.eq(&installed_version) && latest_version != "-";
         candidates.push(UpdateCandidate {
             slug,
             installed: installed_version,

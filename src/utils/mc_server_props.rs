@@ -50,11 +50,10 @@ impl ServerProperties {
     /// Get a property value by key (first occurrence)
     pub fn get(&self, key: &str) -> Option<String> {
         for l in &self.lines {
-            if let Line::Prop { key: k, value } = l {
-                if k == key {
+            if let Line::Prop { key: k, value } = l
+                && k == key {
                     return Some(value.clone());
                 }
-            }
         }
         None
     }
@@ -64,17 +63,17 @@ impl ServerProperties {
         let k = key.into();
         let v = value.into();
         for l in &mut self.lines {
-            if let Line::Prop { key: k0, value: v0 } = l {
-                if *k0 == k {
+            if let Line::Prop { key: k0, value: v0 } = l
+                && *k0 == k {
                     *v0 = v.clone();
                     return;
                 }
-            }
         }
         self.lines.push(Line::Prop { key: k, value: v });
     }
 
     /// Remove the first occurrence of a property by key
+    #[allow(dead_code)]
     pub fn remove(&mut self, key: &str) -> bool {
         if let Some(idx) = self
             .lines
@@ -88,30 +87,15 @@ impl ServerProperties {
         }
     }
 
-    /// Serialize back to server.properties format (comments preserved)
-    pub fn to_string(&self) -> String {
-        let mut out = String::new();
-        for l in &self.lines {
-            match l {
-                Line::Comment(c) => {
-                    out.push_str(c);
-                    out.push('\n');
-                }
-                Line::Empty => out.push('\n'),
-                Line::Prop { key, value } => {
-                    out.push_str(key);
-                    out.push('=');
-                    out.push_str(value);
-                    out.push('\n');
-                }
-            }
-        }
-        out
-    }
+    // Removed inherent to_string per clippy; Display is implemented below
 
     /// Save properties to a file path
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), PropsError> {
-        fs::write(path, self.to_string()).map_err(PropsError::IoError)
+        use std::fmt::Write as _;
+        let mut s = String::new();
+        // Render with Display implementation
+        write!(&mut s, "{}", self).map_err(|e| PropsError::ParseError(e.to_string()))?;
+        fs::write(path, s).map_err(PropsError::IoError)
     }
 }
 
@@ -131,6 +115,25 @@ impl std::fmt::Display for PropsError {
 }
 
 impl std::error::Error for PropsError {}
+
+impl std::fmt::Display for ServerProperties {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for l in &self.lines {
+            match l {
+                Line::Comment(c) => {
+                    writeln!(f, "{}", c)?;
+                }
+                Line::Empty => {
+                    writeln!(f)?;
+                }
+                Line::Prop { key, value } => {
+                    writeln!(f, "{}={}", key, value)?;
+                }
+            }
+        }
+        Ok(())
+    }
+}
 
 #[cfg(test)]
 mod tests {

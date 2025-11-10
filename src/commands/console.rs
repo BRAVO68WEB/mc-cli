@@ -1,4 +1,4 @@
-use clap::{Arg, Command};
+use clap::Command;
 use std::{
     io::{self, Write},
     path::PathBuf,
@@ -61,18 +61,18 @@ pub async fn execute(_: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Err
 
 async fn get_rcon_config() -> Result<(String, u16, String), Box<dyn std::error::Error>> {
     // Defaults
-    let mut host = String::new();
-    let mut port = String::new();
+    let mut _host = String::new();
+    let mut _port = String::new();
     let mut password = String::new();
 
     // Server properties fallback
     let props = ServerProperties::from_file(PathBuf::from("server.properties"));
     if let Ok(p) = props {
-        host = p
+        let host = p
             .get("rcon.host")
             .or_else(|| p.get("rcon_host"))
             .unwrap_or_else(|| "127.0.0.1".to_string());
-        port = p
+        let port = p
             .get("rcon.port")
             .or_else(|| p.get("rcon_port"))
             .unwrap_or_else(|| "25575".to_string());
@@ -80,11 +80,11 @@ async fn get_rcon_config() -> Result<(String, u16, String), Box<dyn std::error::
             .get("rcon.password")
             .or_else(|| p.get("rcon_password"))
             .unwrap_or_default();
+        Ok((host, port.parse::<u16>().unwrap_or(25575), password))
     } else {
         // If server.properties missing, apply hard defaults
-        host = "127.0.0.1".to_string();
-        port = "25575".to_string();
+        let host = "127.0.0.1".to_string();
+        let port = "25575".to_string();
+        Ok((host, port.parse::<u16>().unwrap_or(25575), password))
     }
-
-    Ok((host, port.parse::<u16>().unwrap_or(25575), password))
 }

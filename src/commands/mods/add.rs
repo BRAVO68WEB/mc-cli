@@ -1,6 +1,5 @@
 use crate::libs::modrinth::ModrinthClient;
 use crate::utils::config_file::McConfig;
-use crate::utils::config_file::Versions;
 use clap::{Arg, Command};
 use std::fs;
 use std::path::PathBuf;
@@ -39,15 +38,14 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
     let client = ModrinthClient::new()?;
     let project = client.get_project(&slug).await?;
     // Basic server-side compatibility check (values are often: "unsupported", "optional", "required")
-    if let Some(server_side) = project.server_side.as_deref() {
-        if server_side == "unsupported" {
+    if let Some(server_side) = project.server_side.as_deref()
+        && server_side == "unsupported" {
             return Err(format!(
                 "Project '{}' is not server-compatible (server_side=unsupported).",
                 slug
             )
             .into());
         }
-    }
 
     // Resolve version via Modrinth if not provided
     let (version_number, download_url, filename) = if let Some(vn) = version_arg.clone() {
