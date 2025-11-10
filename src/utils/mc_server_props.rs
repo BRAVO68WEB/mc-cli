@@ -169,17 +169,23 @@ motd=A Minecraft Server initialized by mc-cli
 
     #[test]
     fn load_and_save_file() {
-        // Ensure sample file can be parsed
-        let orig = ServerProperties::from_file("test/server.properties").unwrap();
+        // Prepare temp input/output files to avoid repo-relative paths
+        let tmpdir = std::env::temp_dir();
+        let input_path = tmpdir.join("mc-cli_server.properties.in");
+        let output_path = tmpdir.join("mc-cli_server.properties.out");
+
+        // Write SAMPLE to input and load from file
+        std::fs::write(&input_path, SAMPLE).unwrap();
+        let orig = ServerProperties::from_file(&input_path).unwrap();
         assert_eq!(orig.get("view-distance").as_deref(), Some("10"));
 
         // Modify and save to an output file
         let mut modified = orig.clone();
         modified.set("view-distance", "12");
         modified.set("pvp", "true");
-        modified.save("test/server.properties.out").unwrap();
+        modified.save(&output_path).unwrap();
 
-        let reloaded = ServerProperties::from_file("test/server.properties.out").unwrap();
+        let reloaded = ServerProperties::from_file(&output_path).unwrap();
         assert_eq!(reloaded.get("view-distance").as_deref(), Some("12"));
         assert_eq!(reloaded.get("pvp").as_deref(), Some("true"));
     }
