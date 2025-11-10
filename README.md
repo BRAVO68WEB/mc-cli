@@ -14,7 +14,7 @@ A powerful CLI tool for Minecraft Project Deployment.
 ### From Source
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/BRAVO68WEB/mc-cli
 cd mc-cli
 cargo build --release
 ```
