@@ -51,9 +51,10 @@ impl ServerProperties {
     pub fn get(&self, key: &str) -> Option<String> {
         for l in &self.lines {
             if let Line::Prop { key: k, value } = l
-                && k == key {
-                    return Some(value.clone());
-                }
+                && k == key
+            {
+                return Some(value.clone());
+            }
         }
         None
     }
@@ -64,10 +65,11 @@ impl ServerProperties {
         let v = value.into();
         for l in &mut self.lines {
             if let Line::Prop { key: k0, value: v0 } = l
-                && *k0 == k {
-                    *v0 = v.clone();
-                    return;
-                }
+                && *k0 == k
+            {
+                *v0 = v.clone();
+                return;
+            }
         }
         self.lines.push(Line::Prop { key: k, value: v });
     }

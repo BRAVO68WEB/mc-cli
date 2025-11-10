@@ -196,10 +196,7 @@ async fn initial_start_server() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Render a selectable table and prompt user for a choice, returning selected index
 #[allow(unused_assignments)]
-fn select_with_ratatui(
-    title: &str,
-    items: &[String],
-) -> Result<usize, Box<dyn std::error::Error>> {
+fn select_with_ratatui(title: &str, items: &[String]) -> Result<usize, Box<dyn std::error::Error>> {
     // Setup terminal
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
@@ -273,78 +270,65 @@ fn select_with_ratatui(
         })?;
 
         if event::poll(std::time::Duration::from_millis(200))?
-            && let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Up => {
-                        selected = selected.saturating_sub(1);
+            && let Event::Key(key) = event::read()?
+        {
+            match key.code {
+                KeyCode::Up => {
+                    selected = selected.saturating_sub(1);
+                }
+                KeyCode::Down => {
+                    if selected + 1 < filtered_indices.len() {
+                        selected += 1;
                     }
-                    KeyCode::Down => {
-                        if selected + 1 < filtered_indices.len() {
-                            selected += 1;
-                        }
+                }
+                KeyCode::PageUp => {
+                    let visible = terminal.size()?.height as usize;
+                    selected = selected.saturating_sub(visible.max(1));
+                }
+                KeyCode::PageDown => {
+                    let visible = terminal.size()?.height as usize;
+                    selected = std::cmp::min(
+                        selected + visible.max(1),
+                        filtered_indices.len().saturating_sub(1),
+                    );
+                }
+                KeyCode::Home => {
+                    selected = 0;
+                }
+                KeyCode::End => {
+                    if !filtered_indices.is_empty() {
+                        selected = filtered_indices.len() - 1;
                     }
-                    KeyCode::PageUp => {
-                        let visible = terminal.size()?.height as usize;
-                        selected = selected.saturating_sub(visible.max(1));
+                }
+                KeyCode::Enter => {
+                    if filtered_indices.is_empty() {
+                        result = 0;
+                    } else {
+                        result = filtered_indices[selected];
                     }
-                    KeyCode::PageDown => {
-                        let visible = terminal.size()?.height as usize;
-                        selected = std::cmp::min(
-                            selected + visible.max(1),
-                            filtered_indices.len().saturating_sub(1),
-                        );
-                    }
-                    KeyCode::Home => {
-                        selected = 0;
-                    }
-                    KeyCode::End => {
-                        if !filtered_indices.is_empty() {
-                            selected = filtered_indices.len() - 1;
-                        }
-                    }
-                    KeyCode::Enter => {
-                        if filtered_indices.is_empty() {
-                            result = 0;
-                        } else {
-                            result = filtered_indices[selected];
-                        }
-                        break;
-                    }
-                    KeyCode::Esc => {
-                        if query.is_empty() {
-                            // Cancel selection: default to first
-                            result = 0;
-                            break;
-                        } else {
-                            // Clear search
-                            query.clear();
-                            filtered_indices = (0..items.len()).collect();
-                            selected = 0;
-                            scroll = 0;
-                        }
-                    }
-                    KeyCode::Char('q') => {
+                    break;
+                }
+                KeyCode::Esc => {
+                    if query.is_empty() {
+                        // Cancel selection: default to first
                         result = 0;
                         break;
+                    } else {
+                        // Clear search
+                        query.clear();
+                        filtered_indices = (0..items.len()).collect();
+                        selected = 0;
+                        scroll = 0;
                     }
-                    KeyCode::Backspace => {
-                        if !query.is_empty() {
-                            query.pop();
-                            // Refilter
-                            let qlower = query.to_lowercase();
-                            filtered_indices = items
-                                .iter()
-                                .enumerate()
-                                .filter(|(_, s)| s.to_lowercase().contains(&qlower))
-                                .map(|(i, _)| i)
-                                .collect();
-                            selected = 0;
-                            scroll = 0;
-                        }
-                    }
-                    KeyCode::Char(c) => {
-                        // Update search query
-                        query.push(c);
+                }
+                KeyCode::Char('q') => {
+                    result = 0;
+                    break;
+                }
+                KeyCode::Backspace => {
+                    if !query.is_empty() {
+                        query.pop();
+                        // Refilter
                         let qlower = query.to_lowercase();
                         filtered_indices = items
                             .iter()
@@ -355,9 +339,23 @@ fn select_with_ratatui(
                         selected = 0;
                         scroll = 0;
                     }
-                    _ => {}
                 }
+                KeyCode::Char(c) => {
+                    // Update search query
+                    query.push(c);
+                    let qlower = query.to_lowercase();
+                    filtered_indices = items
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, s)| s.to_lowercase().contains(&qlower))
+                        .map(|(i, _)| i)
+                        .collect();
+                    selected = 0;
+                    scroll = 0;
+                }
+                _ => {}
             }
+        }
     }
 
     // Restore terminal
