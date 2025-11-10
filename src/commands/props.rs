@@ -1,5 +1,5 @@
-use clap::Command;
 use crate::utils::mc_server_props::ServerProperties;
+use clap::Command;
 use std::path::PathBuf;
 
 /// Build the props subcommand
@@ -10,13 +10,13 @@ pub fn command() -> Command {
             clap::Arg::new("key")
                 .value_name("KEY")
                 .help("Property key to read or set")
-                .required(true)
+                .required(true),
         )
         .arg(
             clap::Arg::new("value")
                 .value_name("VALUE")
                 .help("Optional value to set for the property")
-                .required(false)
+                .required(false),
         )
         .arg(
             clap::Arg::new("file")
@@ -24,7 +24,7 @@ pub fn command() -> Command {
                 .short('f')
                 .value_name("PATH")
                 .help("Path to server.properties (defaults to ./server.properties)")
-                .required(false)
+                .required(false),
         )
 }
 
@@ -45,14 +45,12 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
             props.save(&path)?;
             println!("{}={}", key, v);
         }
-        None => {
-            match props.get(&key) {
-                Some(v) => println!("{}", v),
-                None => {
-                    eprintln!("Key '{}' not found in server.properties", key);
-                }
+        None => match props.get(&key) {
+            Some(v) => println!("{}", v),
+            None => {
+                eprintln!("Key '{}' not found in server.properties", key);
             }
-        }
+        },
     }
 
     Ok(())

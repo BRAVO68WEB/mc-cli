@@ -1,6 +1,6 @@
-use clap::{Arg, Command};
-use crate::utils::config_file::McConfig;
 use crate::libs::modrinth::ModrinthClient;
+use crate::utils::config_file::McConfig;
+use clap::{Arg, Command};
 use std::fs;
 use std::path::PathBuf;
 
@@ -28,7 +28,9 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
         let mut target_filename: Option<String> = None;
         for v in versions {
-            if v.version_number.as_deref() == Some(installed_version.as_str()) || v.id == installed_version {
+            if v.version_number.as_deref() == Some(installed_version.as_str())
+                || v.id == installed_version
+            {
                 if let Some(file) = v
                     .files
                     .iter()
@@ -51,7 +53,10 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
                 println!("Jar not found locally: {}", path.display());
             }
         } else {
-            println!("Could not resolve jar filename for installed version '{}' of '{}'.", installed_version, slug);
+            println!(
+                "Could not resolve jar filename for installed version '{}' of '{}'.",
+                installed_version, slug
+            );
         }
 
         // Remove from config

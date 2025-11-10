@@ -5,8 +5,7 @@ use std::process::Command as SysCommand;
 
 /// Build the stop subcommand definition
 pub fn command() -> Command {
-    Command::new("stop")
-        .about("Stop the Minecraft server using mc.lock PID")
+    Command::new("stop").about("Stop the Minecraft server using mc.lock PID")
 }
 
 /// Execute the stop subcommand
@@ -31,11 +30,13 @@ pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
         let _ = fs::remove_file(&lock_path);
         println!("mc.lock removed");
     } else {
-        println!("Failed to kill PID {}. It may have already exited.", pid_str);
+        println!(
+            "Failed to kill PID {}. It may have already exited.",
+            pid_str
+        );
         // Try removing lock anyway if process is gone
         let _ = fs::remove_file(&lock_path);
     }
 
     Ok(())
 }
-

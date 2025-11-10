@@ -13,7 +13,11 @@ pub struct RconClient {
 }
 
 impl RconClient {
-    pub async fn connect(host: &str, port: u16, password: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn connect(
+        host: &str,
+        port: u16,
+        password: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let addr = format!("{}:{}", host, port);
         let mut stream = TcpStream::connect(addr).await?;
 
@@ -50,10 +54,18 @@ fn build_packet(id: i32, kind: i32, payload: &str) -> Packet {
     // size = id(4) + kind(4) + payload bytes + 2 null bytes
     let payload_len = payload.as_bytes().len() as i32;
     let size = 4 + 4 + payload_len + 2;
-    Packet { size, id, kind, payload: payload.to_string() }
+    Packet {
+        size,
+        id,
+        kind,
+        payload: payload.to_string(),
+    }
 }
 
-async fn send_packet(stream: &mut TcpStream, packet: &Packet) -> Result<(), Box<dyn std::error::Error>> {
+async fn send_packet(
+    stream: &mut TcpStream,
+    packet: &Packet,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut buf = Vec::with_capacity((packet.size + 4) as usize);
     buf.extend_from_slice(&packet.size.to_le_bytes());
     buf.extend_from_slice(&packet.id.to_le_bytes());
@@ -76,15 +88,23 @@ async fn recv_packet(stream: &mut TcpStream) -> Result<Packet, Box<dyn std::erro
     let mut rest = vec![0u8; size as usize];
     stream.read_exact(&mut rest).await?;
 
-    if rest.len() < 8 { return Err("Short packet".into()); }
+    if rest.len() < 8 {
+        return Err("Short packet".into());
+    }
     let id = i32::from_le_bytes(rest[0..4].try_into().unwrap());
     let kind = i32::from_le_bytes(rest[4..8].try_into().unwrap());
     // payload is until last two null bytes
-    if rest.len() < 10 { return Err("Short payload".into()); }
+    if rest.len() < 10 {
+        return Err("Short payload".into());
+    }
     // strip last two nulls
-    let payload_bytes = &rest[8..rest.len()-2];
+    let payload_bytes = &rest[8..rest.len() - 2];
     let payload = String::from_utf8_lossy(payload_bytes).to_string();
 
-    Ok(Packet { size, id, kind, payload })
+    Ok(Packet {
+        size,
+        id,
+        kind,
+        payload,
+    })
 }
-

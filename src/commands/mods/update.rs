@@ -1,16 +1,16 @@
-use clap::{Arg, Command};
-use crate::utils::config_file::McConfig;
 use crate::libs::modrinth::ModrinthClient;
+use crate::utils::config_file::McConfig;
+use clap::{Arg, Command};
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
 extern crate modern_terminal;
+use crate::utils::console_log::{field, header};
 use modern_terminal::{
     components::table::{Size, Table},
     core::console::Console,
 };
-use crate::utils::console_log::{header, field};
 
 pub fn command() -> Command {
     Command::new("update")
@@ -20,7 +20,7 @@ pub fn command() -> Command {
                 .long("yes")
                 .short('y')
                 .help("Assume yes; update without confirmation")
-                .action(clap::ArgAction::SetTrue)
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -53,15 +53,27 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
                 // Determine latest (first entry)
                 if let Some(v) = vs.get(0) {
                     latest_version = v.version_number.clone().unwrap_or_else(|| v.id.clone());
-                    if let Some(file) = v.files.iter().find(|f| f.primary.unwrap_or(false)).or_else(|| v.files.first()) {
+                    if let Some(file) = v
+                        .files
+                        .iter()
+                        .find(|f| f.primary.unwrap_or(false))
+                        .or_else(|| v.files.first())
+                    {
                         new_file_url = Some(file.url.clone());
                         new_filename = Some(file.filename.clone());
                     }
                 }
                 // Determine old filename to delete
                 for v in vs.iter() {
-                    if v.version_number.as_deref() == Some(installed_version.as_str()) || v.id == installed_version {
-                        if let Some(file) = v.files.iter().find(|f| f.primary.unwrap_or(false)).or_else(|| v.files.first()) {
+                    if v.version_number.as_deref() == Some(installed_version.as_str())
+                        || v.id == installed_version
+                    {
+                        if let Some(file) = v
+                            .files
+                            .iter()
+                            .find(|f| f.primary.unwrap_or(false))
+                            .or_else(|| v.files.first())
+                        {
                             old_filename = Some(file.filename.clone());
                         }
                         break;
@@ -87,10 +99,22 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
     // Render table showing diffs
     let mut rows: Vec<Vec<Box<dyn modern_terminal::core::render::Render>>> = Vec::new();
     rows.push(vec![
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Mod".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Installed".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Latest".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Status".to_string()); b },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Mod".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Installed".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Latest".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Status".to_string());
+            b
+        },
     ]);
     let mut updates_available = 0usize;
     for c in candidates.iter() {
@@ -103,15 +127,32 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
             "update available"
         };
         rows.push(vec![
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(c.slug.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(c.installed.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(c.latest.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(status.to_string()); b },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(c.slug.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(c.installed.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(c.latest.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(status.to_string());
+                b
+            },
         ]);
     }
 
     let component: Table = Table {
-        column_sizes: vec![Size::Cells(20), Size::Cells(20), Size::Cells(20), Size::Cells(20)],
+        column_sizes: vec![
+            Size::Cells(20),
+            Size::Cells(20),
+            Size::Cells(20),
+            Size::Cells(20),
+        ],
         rows,
     };
     let mut writer = std::io::stdout();
@@ -131,7 +172,9 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
         io::stdout().flush()?;
         let mut input = String::new();
         let read = io::stdin().read_line(&mut input)?;
-        if read == 0 { false } else {
+        if read == 0 {
+            false
+        } else {
             matches!(input.trim().to_lowercase().as_str(), "y" | "yes")
         }
     };
@@ -143,12 +186,16 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
     // Ensure mods directory exists
     let mods_dir = PathBuf::from("mods");
-    if !mods_dir.exists() { fs::create_dir_all(&mods_dir)?; }
+    if !mods_dir.exists() {
+        fs::create_dir_all(&mods_dir)?;
+    }
 
     // Perform updates
     let mut updated = 0usize;
     for c in candidates.into_iter() {
-        if c.latest == "-" || c.latest == c.installed { continue; }
+        if c.latest == "-" || c.latest == c.installed {
+            continue;
+        }
 
         // Delete old jar if we know the filename
         if let Some(old_fn) = c.old_filename.as_ref() {
@@ -171,7 +218,10 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
         }
 
         // Update config
-        config.mods.installed.insert(c.slug.clone(), c.latest.clone());
+        config
+            .mods
+            .installed
+            .insert(c.slug.clone(), c.latest.clone());
         updated += 1;
     }
 
@@ -181,4 +231,3 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
     Ok(())
 }
-

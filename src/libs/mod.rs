@@ -1,2 +1,2 @@
-pub mod modrinth;
 pub mod fabric;
+pub mod modrinth;

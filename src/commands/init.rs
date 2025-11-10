@@ -1,17 +1,20 @@
-use clap::{Arg, Command};
-use std::path::PathBuf;
-use crate::utils::config_file::{McConfig, Versions, Console as ConsoleConfig};
+use crate::libs::fabric::{FabricClient, GameVersion, InstallerVersion, LoaderVersion};
+use crate::utils::config_file::{Console as ConsoleConfig, McConfig, Versions};
 use crate::utils::mc_server_props::ServerProperties;
 use crate::utils::runner::run_cmd;
-use crate::libs::fabric::{FabricClient, GameVersion, LoaderVersion, InstallerVersion};
-use std::io::{self, Write};
-use crossterm::{event::{self, Event, KeyCode}, terminal, execute};
-use ratatui::{
-    prelude::*,
-    layout::{Layout, Direction, Constraint},
-    style::{Style, Modifier, Color},
-    widgets::{List, ListItem, Block, Borders, Paragraph}
+use clap::{Arg, Command};
+use crossterm::{
+    event::{self, Event, KeyCode},
+    execute, terminal,
 };
+use ratatui::{
+    layout::{Constraint, Direction, Layout},
+    prelude::*,
+    style::{Color, Modifier, Style},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
+};
+use std::io::{self, Write};
+use std::path::PathBuf;
 
 /// Build the init subcommand definition
 pub fn command() -> Command {
@@ -24,7 +27,7 @@ pub fn command() -> Command {
                 .value_name("NAME")
                 .help("Name of the project")
                 .required(false)
-                .default_value("my-minecraft-project")
+                .default_value("my-minecraft-project"),
         )
 }
 
@@ -41,15 +44,24 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
     let game_idx = select_with_ratatui(
         "Select Game Version",
-        &game_versions.iter().map(|g| format!("{}{}", g.version, if g.stable { " (stable)" } else { "" })).collect::<Vec<_>>()
+        &game_versions
+            .iter()
+            .map(|g| format!("{}{}", g.version, if g.stable { " (stable)" } else { "" }))
+            .collect::<Vec<_>>(),
     )?;
     let loader_idx = select_with_ratatui(
         "Select Loader Version",
-        &loader_versions.iter().map(|l| format!("{}{}", l.version, if l.stable { " (stable)" } else { "" })).collect::<Vec<_>>()
+        &loader_versions
+            .iter()
+            .map(|l| format!("{}{}", l.version, if l.stable { " (stable)" } else { "" }))
+            .collect::<Vec<_>>(),
     )?;
     let installer_idx = select_with_ratatui(
         "Select Installer Version",
-        &installer_versions.iter().map(|i| format!("{}{}", i.version, if i.stable { " (stable)" } else { "" })).collect::<Vec<_>>()
+        &installer_versions
+            .iter()
+            .map(|i| format!("{}{}", i.version, if i.stable { " (stable)" } else { "" }))
+            .collect::<Vec<_>>(),
     )?;
 
     let fabric_versions = FabricVersion {
@@ -117,7 +129,10 @@ async fn fetch_fabric_versions() -> Result<FabricVersion, Box<dyn std::error::Er
 }
 
 /// Create mc.toml configuration file using McConfig helper
-async fn create_config_file(project_name: &str, fabric_versions: &FabricVersion) -> Result<(), Box<dyn std::error::Error>> {
+async fn create_config_file(
+    project_name: &str,
+    fabric_versions: &FabricVersion,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = McConfig::new(project_name.to_string());
     config.versions = Versions {
         mc_version: fabric_versions.game.clone(),
@@ -140,12 +155,12 @@ async fn create_config_file(project_name: &str, fabric_versions: &FabricVersion)
 }
 
 /// Download the Fabric server JAR for the selected versions
-async fn download_fabric_server_jar(fabric_versions: &FabricVersion) -> Result<(), Box<dyn std::error::Error>> {
+async fn download_fabric_server_jar(
+    fabric_versions: &FabricVersion,
+) -> Result<(), Box<dyn std::error::Error>> {
     let fabric_server_url = format!(
         "https://meta.fabricmc.net/v2/versions/loader/{}/{}/{}/server/jar",
-        fabric_versions.game,
-        fabric_versions.loader,
-        fabric_versions.installer
+        fabric_versions.game, fabric_versions.loader, fabric_versions.installer
     );
     let output_file = format!("server.jar");
     println!("Downloading Fabric server JAR from: {}", fabric_server_url);
@@ -179,7 +194,10 @@ async fn initial_start_server() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Render a selectable table and prompt user for a choice, returning selected index
-fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dyn std::error::Error>> {
+fn select_with_ratatui(
+    title: &str,
+    items: &Vec<String>,
+) -> Result<usize, Box<dyn std::error::Error>> {
     // Setup terminal
     let mut stdout = io::stdout();
     terminal::enable_raw_mode()?;
@@ -191,7 +209,7 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
     let mut query = String::new();
     let mut filtered_indices: Vec<usize> = (0..items.len()).collect();
     let mut selected: usize = 0; // index in filtered list
-    let mut scroll: usize = 0;   // top row in filtered list
+    let mut scroll: usize = 0; // top row in filtered list
     let mut result: Option<usize> = None; // final selected original index
 
     loop {
@@ -199,10 +217,7 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
             let size = f.size();
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([
-                    Constraint::Length(3),
-                    Constraint::Min(5),
-                ])
+                .constraints([Constraint::Length(3), Constraint::Min(5)])
                 .split(size);
 
             // Search bar
@@ -234,17 +249,21 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
             let end = std::cmp::min(start + visible, filtered_indices.len());
 
             // Build list for visible slice
-            let list_items: Vec<ListItem> = (start..end).map(|i| {
-                let idx = filtered_indices[i];
-                let is_sel = i == selected;
-                let prefix = if is_sel { "> " } else { "  " };
-                let style = if is_sel {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default()
-                };
-                ListItem::new(format!("{}{}", prefix, items[idx].as_str())).style(style)
-            }).collect();
+            let list_items: Vec<ListItem> = (start..end)
+                .map(|i| {
+                    let idx = filtered_indices[i];
+                    let is_sel = i == selected;
+                    let prefix = if is_sel { "> " } else { "  " };
+                    let style = if is_sel {
+                        Style::default()
+                            .fg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default()
+                    };
+                    ListItem::new(format!("{}{}", prefix, items[idx].as_str())).style(style)
+                })
+                .collect();
 
             let block = Block::default().borders(Borders::ALL);
             let items_widget = List::new(list_items).block(block);
@@ -255,10 +274,14 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Up => {
-                        if selected > 0 { selected -= 1; }
+                        if selected > 0 {
+                            selected -= 1;
+                        }
                     }
                     KeyCode::Down => {
-                        if selected + 1 < filtered_indices.len() { selected += 1; }
+                        if selected + 1 < filtered_indices.len() {
+                            selected += 1;
+                        }
                     }
                     KeyCode::PageUp => {
                         let visible = terminal.size()?.height as usize;
@@ -266,10 +289,19 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
                     }
                     KeyCode::PageDown => {
                         let visible = terminal.size()?.height as usize;
-                        selected = std::cmp::min(selected + visible.max(1), filtered_indices.len().saturating_sub(1));
+                        selected = std::cmp::min(
+                            selected + visible.max(1),
+                            filtered_indices.len().saturating_sub(1),
+                        );
                     }
-                    KeyCode::Home => { selected = 0; }
-                    KeyCode::End => { if !filtered_indices.is_empty() { selected = filtered_indices.len() - 1; } }
+                    KeyCode::Home => {
+                        selected = 0;
+                    }
+                    KeyCode::End => {
+                        if !filtered_indices.is_empty() {
+                            selected = filtered_indices.len() - 1;
+                        }
+                    }
                     KeyCode::Enter => {
                         if filtered_indices.is_empty() {
                             result = Some(0);
@@ -300,7 +332,9 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
                             query.pop();
                             // Refilter
                             let qlower = query.to_lowercase();
-                            filtered_indices = items.iter().enumerate()
+                            filtered_indices = items
+                                .iter()
+                                .enumerate()
                                 .filter(|(_, s)| s.to_lowercase().contains(&qlower))
                                 .map(|(i, _)| i)
                                 .collect();
@@ -312,7 +346,9 @@ fn select_with_ratatui(title: &str, items: &Vec<String>) -> Result<usize, Box<dy
                         // Update search query
                         query.push(c);
                         let qlower = query.to_lowercase();
-                        filtered_indices = items.iter().enumerate()
+                        filtered_indices = items
+                            .iter()
+                            .enumerate()
                             .filter(|(_, s)| s.to_lowercase().contains(&qlower))
                             .map(|(i, _)| i)
                             .collect();
@@ -338,8 +374,11 @@ async fn initial_server_setup() -> Result<(), Box<dyn std::error::Error>> {
     // Read existing server.properties
     let mut server_props = ServerProperties::from_file(PathBuf::from("server.properties"))?;
 
-    server_props.set("motd", "A Minecraft Server initialized by mc-cli".to_string());
-    
+    server_props.set(
+        "motd",
+        "A Minecraft Server initialized by mc-cli".to_string(),
+    );
+
     // Optimizations
     server_props.set("view-distance", "8".to_string());
     server_props.set("max-tick-time", "60000".to_string());
@@ -348,7 +387,7 @@ async fn initial_server_setup() -> Result<(), Box<dyn std::error::Error>> {
     server_props.set("enable-rcon", "true".to_string());
     server_props.set("rcon.port", "25575".to_string());
     server_props.set("rcon.password", "changeme".to_string());
-    
+
     server_props.save(PathBuf::from("server.properties"))?;
     println!("Created server properties file: server.properties");
 
@@ -358,6 +397,6 @@ async fn initial_server_setup() -> Result<(), Box<dyn std::error::Error>> {
     eula_props.save(PathBuf::from("eula.txt"))?;
 
     println!("Created eula.txt file: eula.txt");
-    
+
     Ok(())
 }

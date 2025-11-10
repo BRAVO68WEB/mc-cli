@@ -1,12 +1,13 @@
+use crate::{
+    libs::modrinth::{ModrinthClient, SearchQuery},
+    utils::console_log::{field, header},
+};
 use clap::{Arg, Command};
-use crate::{libs::modrinth::{ModrinthClient, SearchQuery}, utils::console_log::{field, header}};
 extern crate modern_terminal;
 
 use modern_terminal::{
-    components::{
-        table::{Size, Table},
-    },
-    core::{console::Console},
+    components::table::{Size, Table},
+    core::console::Console,
 };
 
 pub fn command() -> Command {
@@ -38,12 +39,16 @@ pub fn command() -> Command {
 
 pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
     let query_str = matches.get_one::<String>("query").unwrap().to_string();
-    let loaders = matches
-        .get_one::<String>("loaders")
-        .map(|s| s.split(',').map(|x| x.trim().to_string()).collect::<Vec<_>>());
-    let game_versions = matches
-        .get_one::<String>("game_versions")
-        .map(|s| s.split(',').map(|x| x.trim().to_string()).collect::<Vec<_>>());
+    let loaders = matches.get_one::<String>("loaders").map(|s| {
+        s.split(',')
+            .map(|x| x.trim().to_string())
+            .collect::<Vec<_>>()
+    });
+    let game_versions = matches.get_one::<String>("game_versions").map(|s| {
+        s.split(',')
+            .map(|x| x.trim().to_string())
+            .collect::<Vec<_>>()
+    });
 
     let client = ModrinthClient::new()?;
 
@@ -79,20 +84,43 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
     // Build table rows as Vec<Vec<Box<dyn Render>>> to match Table requirements
     let mut rows_owned: Vec<Vec<Box<dyn modern_terminal::core::render::Render>>> = Vec::new();
     rows_owned.push(vec![
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Title".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Slug".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Author".to_string()); b },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Title".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Slug".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Author".to_string());
+            b
+        },
     ]);
     for p in results.hits.iter() {
         rows_owned.push(vec![
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(p.title.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(p.slug.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(p.author.clone()); b },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(p.title.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(p.slug.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(p.author.clone());
+                b
+            },
         ]);
     }
 
     let component: Table = Table {
-        column_sizes: vec![Size::Cells(20), Size::Cells(20), Size::Cells(20), Size::Cells(20)],
+        column_sizes: vec![
+            Size::Cells(20),
+            Size::Cells(20),
+            Size::Cells(20),
+            Size::Cells(20),
+        ],
         rows: rows_owned,
     };
 
@@ -100,4 +128,3 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
 
     Ok(())
 }
-

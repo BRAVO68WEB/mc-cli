@@ -4,8 +4,7 @@ use std::path::Path;
 
 /// Build the status subcommand definition
 pub fn command() -> Command {
-    Command::new("status")
-        .about("Show server running status using mc.lock")
+    Command::new("status").about("Show server running status using mc.lock")
 }
 
 /// Execute the status subcommand
@@ -26,4 +25,3 @@ pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
     println!("Server status: running (PID {})", pid_str);
     Ok(())
 }
-

@@ -1,9 +1,9 @@
-use clap::{Arg, Command};
-use crate::utils::config_file::McConfig;
 use crate::libs::modrinth::ModrinthClient;
+use crate::utils::config_file::McConfig;
+use crate::utils::config_file::Versions;
+use clap::{Arg, Command};
 use std::fs;
 use std::path::PathBuf;
-use crate::utils::config_file::Versions;
 
 pub fn command() -> Command {
     Command::new("add")
@@ -41,7 +41,11 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
     // Basic server-side compatibility check (values are often: "unsupported", "optional", "required")
     if let Some(server_side) = project.server_side.as_deref() {
         if server_side == "unsupported" {
-            return Err(format!("Project '{}' is not server-compatible (server_side=unsupported).", slug).into());
+            return Err(format!(
+                "Project '{}' is not server-compatible (server_side=unsupported).",
+                slug
+            )
+            .into());
         }
     }
 
@@ -57,14 +61,22 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
                 if !v.loaders.is_empty() {
                     let uses_fabric = !config.versions.fabric_version.is_empty();
                     if uses_fabric && !v.loaders.iter().any(|l| l.eq_ignore_ascii_case("fabric")) {
-                        return Err(format!("Version '{}' of '{}' does not declare Fabric loader support.", vn, slug).into());
+                        return Err(format!(
+                            "Version '{}' of '{}' does not declare Fabric loader support.",
+                            vn, slug
+                        )
+                        .into());
                     }
                 }
                 // Validate game version match
                 if !v.game_versions.is_empty() {
                     let mc_ver = &config.versions.mc_version;
                     if !v.game_versions.iter().any(|gv| gv == mc_ver) {
-                        return Err(format!("Version '{}' of '{}' targets game versions {:?}, not current '{}'.", vn, slug, v.game_versions, mc_ver).into());
+                        return Err(format!(
+                            "Version '{}' of '{}' targets game versions {:?}, not current '{}'.",
+                            vn, slug, v.game_versions, mc_ver
+                        )
+                        .into());
                     }
                 }
                 // pick primary file or first
@@ -81,7 +93,9 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
         }
         match found {
             Some(tuple) => tuple,
-            None => return Err(format!("Version '{}' not found for project '{}'.", vn, slug).into()),
+            None => {
+                return Err(format!("Version '{}' not found for project '{}'.", vn, slug).into());
+            }
         }
     } else {
         // No explicit version: pick the latest compatible version (newest first)
@@ -92,8 +106,10 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
         let v = versions
             .into_iter()
             .find(|v| {
-                let loader_ok = !uses_fabric || v.loaders.iter().any(|l| l.eq_ignore_ascii_case("fabric"));
-                let game_ok = v.game_versions.is_empty() || v.game_versions.iter().any(|gv| gv == mc_ver);
+                let loader_ok =
+                    !uses_fabric || v.loaders.iter().any(|l| l.eq_ignore_ascii_case("fabric"));
+                let game_ok =
+                    v.game_versions.is_empty() || v.game_versions.iter().any(|gv| gv == mc_ver);
                 loader_ok && game_ok
             })
             .ok_or_else(|| {
@@ -101,7 +117,11 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
                     "No compatible version of '{}' found for game '{}'{}.",
                     slug,
                     mc_ver,
-                    if uses_fabric { " with Fabric loader" } else { "" }
+                    if uses_fabric {
+                        " with Fabric loader"
+                    } else {
+                        ""
+                    }
                 )
             })?;
 
@@ -124,13 +144,12 @@ pub async fn execute(matches: &clap::ArgMatches) -> Result<(), Box<dyn std::erro
     fs::write(&target_path, &bytes)?;
 
     // Update mc.toml
-    config.mods.installed.insert(slug.clone(), version_number.clone());
+    config
+        .mods
+        .installed
+        .insert(slug.clone(), version_number.clone());
     config.save("mc.toml")?;
 
-    println!(
-        "Downloaded: {} -> {}",
-        filename,
-        target_path.display()
-    );
+    println!("Downloaded: {} -> {}", filename, target_path.display());
     Ok(())
 }

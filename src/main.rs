@@ -1,7 +1,7 @@
 use clap::{Command, Parser};
 
-mod libs;
 mod commands;
+mod libs;
 mod utils;
 
 /// Minecraft CLI - A tool for managing Minecraft projects

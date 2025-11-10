@@ -1,17 +1,16 @@
-use clap::Command;
-use crate::utils::config_file::McConfig;
 use crate::libs::modrinth::ModrinthClient;
+use crate::utils::config_file::McConfig;
+use clap::Command;
 
 extern crate modern_terminal;
+use crate::utils::console_log::{field, header};
 use modern_terminal::{
     components::table::{Size, Table},
     core::console::Console,
 };
-use crate::utils::console_log::{header, field};
 
 pub fn command() -> Command {
-    Command::new("list")
-        .about("List installed mods and show latest available version")
+    Command::new("list").about("List installed mods and show latest available version")
 }
 
 pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::error::Error>> {
@@ -21,9 +20,18 @@ pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
     // Prepare table rows
     let mut rows: Vec<Vec<Box<dyn modern_terminal::core::render::Render>>> = Vec::new();
     rows.push(vec![
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Mod".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Installed".to_string()); b },
-        { let b: Box<dyn modern_terminal::core::render::Render> = header("Latest".to_string()); b },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Mod".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Installed".to_string());
+            b
+        },
+        {
+            let b: Box<dyn modern_terminal::core::render::Render> = header("Latest".to_string());
+            b
+        },
     ]);
 
     for (slug, installed_version) in config.mods.installed.iter() {
@@ -36,14 +44,24 @@ pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
                 } else {
                     String::from("-")
                 }
-            },
+            }
             Err(_) => String::from("-"),
         };
 
         rows.push(vec![
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(slug.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(installed_version.clone()); b },
-            { let b: Box<dyn modern_terminal::core::render::Render> = field(latest_version); b },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(slug.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> =
+                    field(installed_version.clone());
+                b
+            },
+            {
+                let b: Box<dyn modern_terminal::core::render::Render> = field(latest_version);
+                b
+            },
         ]);
     }
 
@@ -58,4 +76,3 @@ pub async fn execute(_matches: &clap::ArgMatches) -> Result<(), Box<dyn std::err
 
     Ok(())
 }
-

@@ -9,19 +9,19 @@ use std::path::Path;
 pub struct McConfig {
     /// Project/Deployment name
     pub name: String,
-    
+
     /// Version information
     pub versions: Versions,
-    
+
     /// Installed mods
     pub mods: Mods,
-    
+
     /// Installed datapacks
     pub datapacks: Datapacks,
-    
+
     /// Installed resourcepacks
     pub resourcepacks: Resourcepacks,
-    
+
     /// Console/server configuration
     pub console: Console,
 }
@@ -64,37 +64,33 @@ pub struct Console {
 impl McConfig {
     /// Parse mc.toml file from the given path
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| ConfigError::IoError(e))?;
-        
+        let content = fs::read_to_string(path).map_err(|e| ConfigError::IoError(e))?;
+
         Self::from_str(&content)
     }
-    
+
     /// Parse mc.toml from a string
     pub fn from_str(content: &str) -> Result<Self, ConfigError> {
-        toml::from_str(content)
-            .map_err(|e| ConfigError::ParseError(e))
+        toml::from_str(content).map_err(|e| ConfigError::ParseError(e))
     }
-    
+
     /// Save configuration to a file
     pub fn save<P: AsRef<Path>>(&self, path: P) -> Result<(), ConfigError> {
-        let content = toml::to_string_pretty(self)
-            .map_err(|e| ConfigError::SerializeError(e))?;
-        
-        fs::write(path, content)
-            .map_err(|e| ConfigError::IoError(e))
+        let content = toml::to_string_pretty(self).map_err(|e| ConfigError::SerializeError(e))?;
+
+        fs::write(path, content).map_err(|e| ConfigError::IoError(e))
     }
-    
+
     /// Load mc.toml from the current directory
     pub fn load() -> Result<Self, ConfigError> {
         Self::from_file("mc.toml")
     }
-    
+
     /// Check if mc.toml exists in the current directory
     pub fn exists() -> bool {
         Path::new("mc.toml").exists()
     }
-    
+
     /// Create a new default configuration
     pub fn new(name: String) -> Self {
         Self {
@@ -178,23 +174,32 @@ launch_cmd = ["java", "-Xmx4G", "-jar", "server.jar", "nogui"]
 "#;
 
         let config = McConfig::from_str(toml_content).unwrap();
-        
+
         assert_eq!(config.name, "my-minecraft-server");
         assert_eq!(config.versions.mc_version, "1.20.1");
         assert_eq!(config.versions.fabric_version, "0.15.0");
         assert_eq!(config.mods.installed.len(), 3);
-        assert_eq!(config.mods.installed.get("fabric-api"), Some(&"0.92.0".to_string()));
+        assert_eq!(
+            config.mods.installed.get("fabric-api"),
+            Some(&"0.92.0".to_string())
+        );
         assert_eq!(config.datapacks.installed.len(), 2);
-        assert_eq!(config.datapacks.installed.get("vanilla-tweaks"), Some(&"1.0.0".to_string()));
+        assert_eq!(
+            config.datapacks.installed.get("vanilla-tweaks"),
+            Some(&"1.0.0".to_string())
+        );
         assert_eq!(config.resourcepacks.installed.len(), 1);
-        assert_eq!(config.resourcepacks.installed.get("faithful"), Some(&"1.20.1".to_string()));
+        assert_eq!(
+            config.resourcepacks.installed.get("faithful"),
+            Some(&"1.20.1".to_string())
+        );
         assert_eq!(config.console.launch_cmd.len(), 5);
     }
 
     #[test]
     fn test_new_config() {
         let config = McConfig::new(String::from("test-server"));
-        
+
         assert_eq!(config.name, "test-server");
         assert_eq!(config.versions.mc_version, "1.20.1");
         assert!(config.mods.installed.is_empty());
@@ -207,7 +212,7 @@ launch_cmd = ["java", "-Xmx4G", "-jar", "server.jar", "nogui"]
     fn test_serialize_config() {
         let config = McConfig::new(String::from("test"));
         let toml_string = toml::to_string_pretty(&config).unwrap();
-        
+
         assert!(toml_string.contains("name = \"test\""));
         assert!(toml_string.contains("[versions]"));
         assert!(toml_string.contains("[mods]"));
@@ -215,23 +220,35 @@ launch_cmd = ["java", "-Xmx4G", "-jar", "server.jar", "nogui"]
         assert!(toml_string.contains("[resourcepacks]"));
         assert!(toml_string.contains("[console]"));
     }
-    
+
     #[test]
     fn test_config_with_versions() {
         let mut config = McConfig::new(String::from("test"));
-        
+
         // Add mods with versions
-        config.mods.installed.insert("xyz".to_string(), "0.0.0".to_string());
-        config.mods.installed.insert("abc".to_string(), "1.1.1".to_string());
-        
+        config
+            .mods
+            .installed
+            .insert("xyz".to_string(), "0.0.0".to_string());
+        config
+            .mods
+            .installed
+            .insert("abc".to_string(), "1.1.1".to_string());
+
         // Add datapacks with versions
-        config.datapacks.installed.insert("asdf".to_string(), "1.2.3".to_string());
-        
+        config
+            .datapacks
+            .installed
+            .insert("asdf".to_string(), "1.2.3".to_string());
+
         // Add resourcepacks with versions
-        config.resourcepacks.installed.insert("qwerty".to_string(), "9.9.9".to_string());
-        
+        config
+            .resourcepacks
+            .installed
+            .insert("qwerty".to_string(), "9.9.9".to_string());
+
         let toml_string = toml::to_string_pretty(&config).unwrap();
-        
+
         assert!(toml_string.contains("xyz = \"0.0.0\""));
         assert!(toml_string.contains("abc = \"1.1.1\""));
         assert!(toml_string.contains("asdf = \"1.2.3\""));

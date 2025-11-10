@@ -46,19 +46,19 @@ pub struct ProjectResult {
 pub struct SearchQuery {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub facets: Option<String>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub index: Option<String>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub offset: Option<u32>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<u32>,
-    
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub filters: Option<String>,
 }
@@ -67,32 +67,32 @@ impl SearchQuery {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
     pub fn query(mut self, query: impl Into<String>) -> Self {
         self.query = Some(query.into());
         self
     }
-    
+
     pub fn facets(mut self, facets: impl Into<String>) -> Self {
         self.facets = Some(facets.into());
         self
     }
-    
+
     pub fn index(mut self, index: impl Into<String>) -> Self {
         self.index = Some(index.into());
         self
     }
-    
+
     pub fn offset(mut self, offset: u32) -> Self {
         self.offset = Some(offset);
         self
     }
-    
+
     pub fn limit(mut self, limit: u32) -> Self {
         self.limit = Some(limit);
         self
     }
-    
+
     pub fn filters(mut self, filters: impl Into<String>) -> Self {
         self.filters = Some(filters.into());
         self
@@ -114,32 +114,30 @@ pub struct ModrinthClient {
 
 impl ModrinthClient {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client = reqwest::Client::builder()
-            .user_agent(USER_AGENT)
-            .build()?;
-        
+        let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
+
         Ok(Self {
             client,
             base_url: BASE_URL.to_string(),
         })
     }
-    
+
     pub fn with_base_url(mut self, base_url: impl Into<String>) -> Self {
         self.base_url = base_url.into();
         self
     }
-    
+
     /// Search for projects on Modrinth
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `query` - Optional SearchQuery with filters and parameters
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```no_run
     /// use mc_cli::libs::modrinth::{ModrinthClient, SearchQuery};
-    /// 
+    ///
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let client = ModrinthClient::new()?;
@@ -166,15 +164,15 @@ impl ModrinthClient {
         query: Option<SearchQuery>,
     ) -> Result<SearchResults, Box<dyn std::error::Error>> {
         let url = format!("{}/search", self.base_url);
-        
+
         let mut request = self.client.get(&url);
-        
+
         if let Some(q) = query {
             request = request.query(&q);
         }
-        
+
         let response = request.send().await?;
-        
+
         if response.status().is_success() {
             let results: SearchResults = response.json().await?;
             Ok(results)
@@ -217,10 +215,7 @@ impl ModrinthClient {
     }
 
     /// Get a version by ID
-    pub async fn get_version(
-        &self,
-        id: &str,
-    ) -> Result<Version, Box<dyn std::error::Error>> {
+    pub async fn get_version(&self, id: &str) -> Result<Version, Box<dyn std::error::Error>> {
         let url = format!("{}/version/{}", self.base_url, id);
         let response = self.client.get(&url).send().await?;
         if response.status().is_success() {
