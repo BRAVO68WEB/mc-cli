@@ -183,10 +183,99 @@ impl ModrinthClient {
             Err(format!("{}: {}", error.error, error.description).into())
         }
     }
+
+    /// Get a project by ID or slug
+    pub async fn get_project(
+        &self,
+        id_or_slug: &str,
+    ) -> Result<Project, Box<dyn std::error::Error>> {
+        let url = format!("{}/project/{}", self.base_url, id_or_slug);
+        let response = self.client.get(&url).send().await?;
+        if response.status().is_success() {
+            let project: Project = response.json().await?;
+            Ok(project)
+        } else {
+            let error: ApiError = response.json().await?;
+            Err(format!("{}: {}", error.error, error.description).into())
+        }
+    }
+
+    /// List versions for a project by ID or slug
+    pub async fn get_project_versions(
+        &self,
+        id_or_slug: &str,
+    ) -> Result<Vec<Version>, Box<dyn std::error::Error>> {
+        let url = format!("{}/project/{}/version", self.base_url, id_or_slug);
+        let response = self.client.get(&url).send().await?;
+        if response.status().is_success() {
+            let versions: Vec<Version> = response.json().await?;
+            Ok(versions)
+        } else {
+            let error: ApiError = response.json().await?;
+            Err(format!("{}: {}", error.error, error.description).into())
+        }
+    }
+
+    /// Get a version by ID
+    pub async fn get_version(
+        &self,
+        id: &str,
+    ) -> Result<Version, Box<dyn std::error::Error>> {
+        let url = format!("{}/version/{}", self.base_url, id);
+        let response = self.client.get(&url).send().await?;
+        if response.status().is_success() {
+            let version: Version = response.json().await?;
+            Ok(version)
+        } else {
+            let error: ApiError = response.json().await?;
+            Err(format!("{}: {}", error.error, error.description).into())
+        }
+    }
 }
 
 impl Default for ModrinthClient {
     fn default() -> Self {
         Self::new().expect("Failed to create ModrinthClient")
     }
+}
+
+// Project detail response (subset)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Project {
+    pub id: String,
+    pub slug: String,
+    pub project_type: String,
+    pub title: String,
+    pub description: String,
+    pub categories: Vec<String>,
+    pub downloads: u64,
+    pub author: Option<String>,
+    pub client_side: Option<String>,
+    pub server_side: Option<String>,
+    pub versions: Option<Vec<String>>, // version IDs
+}
+
+// Version response (subset)
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Version {
+    pub id: String,
+    pub name: Option<String>,
+    pub version_number: Option<String>,
+    pub game_versions: Vec<String>,
+    pub loaders: Vec<String>,
+    pub files: Vec<VersionFile>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct VersionFile {
+    pub url: String,
+    pub filename: String,
+    pub hashes: Hashes,
+    pub primary: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Hashes {
+    pub sha1: Option<String>,
+    pub sha512: Option<String>,
 }

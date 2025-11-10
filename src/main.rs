@@ -28,17 +28,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand(commands::init::command())
+        .subcommand(commands::run::command())
+        .subcommand(commands::console::command())
+        .subcommand(commands::props::command())
+        .subcommand(commands::status::command())
+        .subcommand(commands::stop::command())
+        .subcommand(commands::mods::command())
         .get_matches();
 
-    // Handle subcommands
-    match matches.subcommand() {
-        Some(("init", sub_matches)) => {
-            commands::init::execute(sub_matches).await?;
-        }
-        _ => {
-            println!("Unknown command. Use --help for more information.");
-        }
-    }
+    // Delegate subcommand dispatch to commands::execute for consistency
+    commands::execute(&matches).await?;
 
     Ok(())
 }
